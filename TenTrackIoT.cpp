@@ -8,9 +8,30 @@
 TenTrackIoT::TenTrackIoT() {
     SPI.begin();
     rfid.init();
+    neo6m.begin(9600);
+}
+
+void TenTrackIoT::On(int input_pin) {
+    if (pinModeOnOff == 0) {
+        pinMode (input_pin, OUTPUT);
+        pinModeOnOff = 1;
+    }
+    digitalWrite(input_pin, HIGH);
+}
+
+void TenTrackIoT::Off(int input_pin) {
+    if (pinModeOnOff == 0) {
+        pinMode (input_pin, OUTPUT);
+        pinModeOnOff = 1;
+    }
+    digitalWrite(input_pin, LOW);
 }
 
 void TenTrackIoT::Blink(int input_pin, long input_interval) {
+    if (pinModeBlink == 0) {
+        pinMode (input_pin, OUTPUT);
+        pinModeBlink = 1;
+    }
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis > input_interval) {
         if (blinkState == 0) {
@@ -25,6 +46,10 @@ void TenTrackIoT::Blink(int input_pin, long input_interval) {
 }
 
 bool TenTrackIoT::IsPressed(int input_pin) {
+    if (pinModeSwitch == 0) {
+        pinMode (input_pin, INPUT);
+        pinModeSwitch = 1;
+    }
     bool switchPressed = false;
 	unsigned long currentMillis = millis();
 	unsigned int currentState = digitalRead(input_pin);
@@ -88,4 +113,34 @@ String TenTrackIoT::ReadRFID() {
 
 bool TenTrackIoT::IsMoved() {
     return(mpu.Detected());
+}
+
+double TenTrackIoT::ReadLatitude() {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis > 10000) {
+        latitude = 0.000000;
+        previousMillis = currentMillis;
+    }
+    if (neo6m.available()) {
+        gps.encode(neo6m.read());
+        if (gps.location.isUpdated()) {
+            latitude = gps.location.lat();
+        }
+    }
+    return(latitude);
+}
+
+double TenTrackIoT::ReadLongitude() {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis > 10000) {
+        longitude = 0.000000;
+        previousMillis = currentMillis;
+    }
+    if (neo6m.available()) {
+        gps.encode(neo6m.read());
+        if (gps.location.isUpdated()) {
+            longitude = gps.location.lng();
+        }
+    }
+    return(longitude);
 }
