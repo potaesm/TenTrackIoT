@@ -11,56 +11,56 @@ TenTrackIoT::TenTrackIoT() {
     neo6m.begin(9600);
 }
 
-void TenTrackIoT::On(int input_pin) {
-    if (pinModeOnOff == 0) {
-        pinMode (input_pin, OUTPUT);
-        pinModeOnOff = 1;
+void TenTrackIoT::On(int on_input_pin) {
+    if (pinModeOn == 0) {
+        pinMode (on_input_pin, OUTPUT);
+        pinModeOn = 1;
     }
-    digitalWrite(input_pin, HIGH);
+    digitalWrite(on_input_pin, HIGH);
 }
 
-void TenTrackIoT::Off(int input_pin) {
-    if (pinModeOnOff == 0) {
-        pinMode (input_pin, OUTPUT);
-        pinModeOnOff = 1;
+void TenTrackIoT::Off(int off_input_pin) {
+    if (pinModeOff == 0) {
+        pinMode (off_input_pin, OUTPUT);
+        pinModeOff = 1;
     }
-    digitalWrite(input_pin, LOW);
+    digitalWrite(off_input_pin, LOW);
 }
 
-void TenTrackIoT::Blink(int input_pin, long input_interval) {
+void TenTrackIoT::Blink(int blink_input_pin, long input_interval) {
     if (pinModeBlink == 0) {
-        pinMode (input_pin, OUTPUT);
+        pinMode (blink_input_pin, OUTPUT);
         pinModeBlink = 1;
     }
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis > input_interval) {
+    if (currentMillis - blink_previousMillis > input_interval) {
         if (blinkState == 0) {
-            digitalWrite(input_pin, HIGH);
+            digitalWrite(blink_input_pin, HIGH);
             blinkState = 1;
         } else {
-            digitalWrite(input_pin, LOW);
+            digitalWrite(blink_input_pin, LOW);
             blinkState = 0;
         }
-        previousMillis = currentMillis;
+        blink_previousMillis = currentMillis;
     }
 }
 
-bool TenTrackIoT::IsPressed(int input_pin) {
+bool TenTrackIoT::IsPressed(int switch_input_pin) {
     if (pinModeSwitch == 0) {
-        pinMode (input_pin, INPUT);
+        pinMode (switch_input_pin, INPUT);
         pinModeSwitch = 1;
     }
     bool switchPressed = false;
 	unsigned long currentMillis = millis();
-	unsigned int currentState = digitalRead(input_pin);
-	if (currentMillis - previousMillis > 100) {
+	unsigned int currentState = digitalRead(switch_input_pin);
+	if (currentMillis - switch_previousMillis > 100) {
 		if (currentState == 1 && previousState == 0) {
 			switchPressed = true;
 			previousState = currentState;
 		}
-        if (currentMillis - previousMillis > 1000) {
+        if (currentMillis - switch_previousMillis > 1000) {
             previousState = 0;
-            previousMillis = currentMillis;
+            switch_previousMillis = currentMillis;
         }
 	}
 	return(switchPressed);
@@ -75,31 +75,38 @@ bool TenTrackIoT::Toggle() {
     return(toggle);
 }
 
-int TenTrackIoT::ReadLDR(int input_pin) {
-    return(analogRead(input_pin));
+int TenTrackIoT::ReadLDR(int ldr_input_pin) {
+    if (pinModeLdr == 0) {
+        pinMode (ldr_input_pin, INPUT);
+        pinModeLdr = 1;
+    }
+    ldr_value = analogRead(ldr_input_pin);
+    return(ldr_value);
 }
 
-void TenTrackIoT::InitDHT(int input_pin) {
+void TenTrackIoT::InitDHT(int dht_input_pin) {
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis > 1000) {
-        dht11.read(input_pin, &temperature, &humidity, NULL);
-        previousMillis = currentMillis;
+    if (currentMillis - dht_previousMillis > 1000) {
+        dht11.read(dht_input_pin, &temperature, &humidity, NULL);
+        dht_previousMillis = currentMillis;
     }
 }
 
-int TenTrackIoT::ReadTemperature() {
+int TenTrackIoT::ReadTemperature(int dht_input_pin) {
+    TenTrackIoT::InitDHT(dht_input_pin);
     return((int)temperature);
 }
 
-int TenTrackIoT::ReadHumidity() {
+int TenTrackIoT::ReadHumidity(int dht_input_pin) {
+    TenTrackIoT::InitDHT(dht_input_pin);
     return((int)humidity);
 }
 
 String TenTrackIoT::ReadRFID() {
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis > 100) {
+    if (currentMillis - rfid_previousMillis > 100) {
         idNumber = "";
-        previousMillis = currentMillis;
+        rfid_previousMillis = currentMillis;
     }
     if (rfid.isCard()) {
         if (rfid.readCardSerial()) {
@@ -117,9 +124,9 @@ bool TenTrackIoT::IsMoved() {
 
 double TenTrackIoT::ReadLatitude() {
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis > 10000) {
+    if (currentMillis - latitude_previousMillis > 10000) {
         latitude = 0.000000;
-        previousMillis = currentMillis;
+        latitude_previousMillis = currentMillis;
     }
     if (neo6m.available()) {
         gps.encode(neo6m.read());
@@ -132,9 +139,9 @@ double TenTrackIoT::ReadLatitude() {
 
 double TenTrackIoT::ReadLongitude() {
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis > 10000) {
+    if (currentMillis - longitude_previousMillis > 10000) {
         longitude = 0.000000;
-        previousMillis = currentMillis;
+        longitude_previousMillis = currentMillis;
     }
     if (neo6m.available()) {
         gps.encode(neo6m.read());
